@@ -72,7 +72,6 @@ app.post("/", (req, res) => {
 app.post("/signup", (req, res) => {
   const { username, email, password } = req.body;
 
-  // Verificar si el usuario ya existe en la base de datos
   User.findOne({ email })
     .then((user) => {
       if (user) {
@@ -81,11 +80,9 @@ app.post("/signup", (req, res) => {
           .json({ message: "El correo electrónico ya está en uso" });
       }
 
-      // Hash del password antes de almacenarlo en la base de datos
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(password, salt);
 
-      // Crear un nuevo usuario utilizando el modelo de Mongoose
       const newUser = new User({ username, email, password: hash });
       return newUser.save();
     })
@@ -103,7 +100,6 @@ app.post("/signup", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // Find the user by email
   User.findOne({ email })
     .then((user) => {
       if (!user) {
@@ -112,7 +108,6 @@ app.post("/login", (req, res) => {
           .json({ message: "Correo electrónico o contraseña incorrectos" });
       }
 
-      // Compare the password using bcrypt
       bcrypt.compare(password, user.password)
         .then((isMatch) => {
           if (!isMatch) {
@@ -121,10 +116,8 @@ app.post("/login", (req, res) => {
               .json({ message: "Correo electrónico o contraseña incorrectos" });
           }
 
-          // Generate a JWT token
           const token = jwt.sign({ userId: user._id }, "secret_key");
 
-          // Return the token to the client
           res.json({ token });
         })
         .catch((err) => {
