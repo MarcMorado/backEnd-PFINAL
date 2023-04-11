@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const User = require("./db/schemas/User");
 const bodyParser = require("body-parser");
+const Character = require("./db/schemas/Character");
 const jwt = require("jsonwebtoken");
 const app = express();
 const port = 3001;
@@ -118,7 +119,10 @@ app.post("/login", (req, res) => {
 
           const token = jwt.sign({ userId: user._id }, "secret_key");
 
-          res.json({ token });
+          // Guardar el ID del usuario en una variable
+          const userId = user._id;
+
+          res.json({ token, userId });
         })
         .catch((err) => {
           console.log(err);
@@ -141,11 +145,101 @@ app.post("/createRoom", (req, res) => {
   res.send({ roomCode: roomCode });
 });
 
-app.post("/character", (req, res) => {
-  console.log(req.body);
-  res.send({ data: "character received" });
-});
+// app.post("/character", (req, res) => {
+//   console.log(req.body);
+//   res.send({ data: "character received" });
+// });
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
+});
+
+
+
+///GET PJ
+app.get('/characters/:userId', (req, res) => {
+  Character.find({ userId: req.params.userId })
+    .then((characters) => {
+      res.send(characters);
+      console.log(req.params.userId);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send('An error occurred');
+    });
+});
+
+
+
+/// Guardar el PERSONAJE
+
+app.post("/character", (req, res) => {
+  const { character, userId } = req.body;
+
+  const newCharacter = new Character({
+    userId: character.userId,
+    model: character.model,
+    charName: character.charName,
+    race: character.race,
+    class: character.class,
+    level: character.level,
+    background: character.background,
+    alignment: character.alignment,
+    expPoints: character.expPoints,
+    armorClass: character.armorClass,
+    initiative: character.initiative,
+    speed: character.speed,
+    hitPoints: character.hitPoints,
+    inspiration: character.inspiration,
+    proficiencyBonus: character.proficiencyBonus,
+    equipment: {
+      armor: character.equipment.armor,
+      weapon: character.equipment.weapon,
+    },
+    stats: {
+      str: character.stats.str,
+      dex: character.stats.dex,
+      const: character.stats.const,
+      int: character.stats.int,
+      wis: character.stats.wis,
+      char: character.stats.char,
+    },
+    savingThrows: {
+      str: character.savingThrows.str,
+      dex: character.savingThrows.dex,
+      const: character.savingThrows.const,
+      int: character.savingThrows.int,
+      wis: character.savingThrows.wis,
+      char: character.savingThrows.char,
+    },
+    skills: {
+      acrobatics: character.skills.acrobatics,
+      animalHandling: character.skills.animalHandling,
+      arcana: character.skills.arcana,
+      athletics: character.skills.athletics,
+      deception: character.skills.deception,
+      history: character.skills.history,
+      insight: character.skills.insight,
+      intimidation: character.skills.intimidation,
+      investigation: character.skills.investigation,
+      medicine: character.skills.medicine,
+      nature: character.skills.nature,
+      perception: character.skills.perception,
+      performance: character.skills.performance,
+      persuasion: character.skills.persuasion,
+      religion: character.skills.religion,
+      sleightOfHands: character.skills.sleightOfHands,
+      stealth: character.skills.stealth,
+      survival: character.skills.survival,
+    },
+  });
+
+  newCharacter.save()
+    .then((character) => {
+      res.json({ message: "Personaje guardado con éxito", character });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ message: "Ha ocurrido un error en el servidor" });
+    });
 });
