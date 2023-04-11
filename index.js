@@ -32,6 +32,8 @@ const io = require("socket.io")(3002, {
   },
 });
 
+let players = [];
+
 io.on("connection", (socket) => {
   console.log("Un nuevo cliente se ha conectado");
   connectToDb();
@@ -42,8 +44,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("joinRoom", (roomCode) => {
-    socket.join(roomCode);
-    console.log(`El usuario se ha unido a la sala con código: ${roomCode}`);
+    if (players.length < 4) {
+      socket.join(roomCode);
+      console.log(`El usuario se ha unido a la sala con código: ${roomCode}`);
+    } else {
+      socket.disconnect();
+    }
   });
 
   socket.on("roll", (data) => {
@@ -52,8 +58,38 @@ io.on("connection", (socket) => {
     io.to(data.roomCode).emit("userRoll", data); // Emitir evento a todos los sockets en la misma sala
   });
 
+  socket.on("selectCharacter", (playerCharacter, roomCode) => {
+    if (players.length < 4) {
+      players.push(playerCharacter);
+      io.emit("updatePlayers", players);
+      console.log("socket id=>", players);
+      console.log("players", players.length);
+      console.log("el codigo de la sala", roomCode);
+    }
+  });
+
   socket.on("newWeapon", (data) => {
     saveWeapon(data);
+  });
+
+  socket.on("exitRoom", (name) => {
+    console.log(name);
+    console.log(players);
+    const index = players.findIndex((player) => player.charName === name);
+    if (index !== -1) {
+      players.splice(index, 1);
+      io.emit("updatePlayers", players);
+    }
+    console.log("players restantes", players.length);
+  });
+
+  socket.on("disconnect", (name) => {
+    console.log("user disconnected");
+    const index = players.findIndex((player) => player.charName === name);
+    if (index !== -1) {
+      players.splice(index, 1);
+      io.emit("updatePlayers", players);
+    }
   });
 });
 
@@ -109,7 +145,8 @@ app.post("/login", (req, res) => {
           .json({ message: "Correo electrónico o contraseña incorrectos" });
       }
 
-      bcrypt.compare(password, user.password)
+      bcrypt
+        .compare(password, user.password)
         .then((isMatch) => {
           if (!isMatch) {
             return res
@@ -121,8 +158,8 @@ app.post("/login", (req, res) => {
 
           // Guardar el ID del usuario en una variable
           const userId = user._id;
-
-          res.json({ token, userId });
+          const username = user.username;
+          res.json({ token, userId, username });
         })
         .catch((err) => {
           console.log(err);
@@ -136,7 +173,6 @@ app.post("/login", (req, res) => {
       res.status(500).json({ message: "Ha ocurrido un error en el servidor" });
     });
 });
-
 
 app.post("/createRoom", (req, res) => {
   const roomCode = req.body.roomCode;
@@ -154,10 +190,8 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
 
-
-
 ///GET PJ
-app.get('/characters/:userId', (req, res) => {
+app.get("/characters/:userId", (req, res) => {
   Character.find({ userId: req.params.userId })
     .then((characters) => {
       res.send(characters);
@@ -165,11 +199,9 @@ app.get('/characters/:userId', (req, res) => {
     })
     .catch((error) => {
       console.log(error);
-      res.status(500).send('An error occurred');
+      res.status(500).send("An error occurred");
     });
 });
-
-
 
 /// Guardar el PERSONAJE
 
@@ -234,7 +266,8 @@ app.post("/character", (req, res) => {
     },
   });
 
-  newCharacter.save()
+  newCharacter
+    .save()
     .then((character) => {
       res.json({ message: "Personaje guardado con éxito", character });
     })
