@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const port = 3001;
 const { saveWeapon, connectToDb } = require("./db/services/mongodb");
-
+//! PARA SUBIR EL SERVER https://railway.app/
 //TEST DB
 mongoose.connect("mongodb+srv://Marc:1234@final.awdtnsf.mongodb.net/test", {
   useNewUrlParser: true,
@@ -33,7 +33,6 @@ const io = require("socket.io")(3002, {
 });
 
 let players = [];
-
 io.on("connection", (socket) => {
   console.log("Un nuevo cliente se ha conectado");
   connectToDb();
@@ -51,21 +50,15 @@ io.on("connection", (socket) => {
       socket.disconnect();
     }
   });
-
   socket.on("roll", (data) => {
-    console.log(data.user);
-    console.log(data.roll);
-    io.to(data.roomCode).emit("userRoll", data); // Emitir evento a todos los sockets en la misma sala
+    console.log('El usuario: ',data.user, 'ha tirado ==>', (data.roll));
+    io.emit("userRoll", data); // Emitir evento a todos los sockets en la misma sala
   });
 
-  socket.on("selectCharacter", (playerCharacter, roomCode) => {
+  socket.on("selectCharacter", (playerCharacter) => {
     if (players.length < 4) {
       players.push(playerCharacter);
-      io.emit("updatePlayers", players);
-      console.log("socket id=>", players);
-      console.log("players", players.length);
-      console.log("el codigo de la sala", roomCode);
-    }
+      io.emit("updatePlayers", players);    }
   });
 
   socket.on("newWeapon", (data) => {
@@ -73,8 +66,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("exitRoom", (name) => {
-    console.log(name);
-    console.log(players);
     const index = players.findIndex((player) => player.charName === name);
     if (index !== -1) {
       players.splice(index, 1);
