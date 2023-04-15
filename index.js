@@ -76,11 +76,16 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", (name) => {
     console.log("user disconnected");
-    const index = players.findIndex((player) => player.charName === name);
-    if (index !== -1) {
-      players.splice(index, 1);
-      io.emit("updatePlayers", players);
-    }
+    // const index = players.findIndex((player) => player.charName === name);
+    players.pop();
+    io.emit("updatePlayers", players);
+
+    // if (index !== -1) {
+    //   players.splice(index, 1);
+    //   io.emit("updatePlayers", players);
+      
+    // }
+    console.log(players.length);
   });
 });
 
