@@ -51,14 +51,15 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("roll", (data) => {
-    console.log('El usuario: ',data.user, 'ha tirado ==>', (data.roll));
+    console.log("El usuario: ", data.user, "ha tirado ==>", data.roll);
     io.emit("userRoll", data); // Emitir evento a todos los sockets en la misma sala
   });
 
   socket.on("selectCharacter", (playerCharacter) => {
     if (players.length < 4) {
       players.push(playerCharacter);
-      io.emit("updatePlayers", players);    }
+      io.emit("updatePlayers", players);
+    }
   });
 
   socket.on("newWeapon", (data) => {
@@ -83,7 +84,7 @@ io.on("connection", (socket) => {
     // if (index !== -1) {
     //   players.splice(index, 1);
     //   io.emit("updatePlayers", players);
-      
+
     // }
     console.log(players.length);
   });
@@ -132,7 +133,6 @@ app.post("/signup", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-
   User.findOne({ email })
     .then((user) => {
       if (!user) {
@@ -155,7 +155,8 @@ app.post("/login", (req, res) => {
           // Guardar el ID del usuario en una variable
           const userId = user._id;
           const username = user.username;
-          res.json({ token, userId, username });
+          const emailB = user.email;
+          res.json({ token, userId, username, emailB });
         })
         .catch((err) => {
           console.log(err);
@@ -168,6 +169,71 @@ app.post("/login", (req, res) => {
       console.log(err);
       res.status(500).json({ message: "Ha ocurrido un error en el servidor" });
     });
+});
+
+app.post("/checkPassword", (req, res) => {
+  const { oldEmail, passwordCheck } = req.body;
+  const email = oldEmail;
+  const password = passwordCheck;
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return res
+          .status(401)
+          .json({ message: "Correo electrónico o contraseña incorrectos" });
+      }
+
+      bcrypt
+        .compare(password, user.password)
+        .then((isMatch) => {
+          if (!isMatch) {
+            return res
+              .status(401)
+              .json({ message: "Correo electrónico o contraseña incorrectos" });
+          }
+
+          const token = jwt.sign({ userId: user._id }, "secret_key");
+
+          // Guardar el ID del usuario en una variable
+          const checked = true;
+          res.json({ checked });
+        })
+        .catch((err) => {
+          console.log(err);
+          res
+            .status(500)
+            .json({ message: "Ha ocurrido un error en el servidor" });
+        });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ message: "Ha ocurrido un error en el servidor" });
+    });
+});
+
+app.post("/updateUser", (req, res) => {
+  const { username, newEmail, password, oldEmail } = req.body;
+ const email = oldEmail;
+  User.findOne({ email }).then((user) => {
+    if (user) {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+      User.updateOne({ email: oldEmail },{
+        $set: { username: username, password: hash, email: newEmail },
+      })
+        .then(() => {
+          res.status(200).json({
+            message: "Los datos del usuario se han actualizado correctamente",
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          res
+            .status(500)
+            .json({ message: "Ha ocurrido un error en el servidor" });
+        });
+    }
+  });
 });
 
 app.post("/createRoom", (req, res) => {
