@@ -43,11 +43,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("joinRoom", (roomCode) => {
-    if (players.length < 4) {
+    if (players.length < 2) {
       socket.join(roomCode);
       console.log(`El usuario se ha unido a la sala con código: ${roomCode}`);
     } else {
-      socket.disconnect();
+      socket.emit('roomFull', 'La sala está llena. No puedes unirte.');
+      socket.emit('redirect', '/find-game'); // redirige a la página de unirse a partida
     }
   });
   socket.on("roll", (data) => {
