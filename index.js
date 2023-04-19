@@ -55,7 +55,9 @@ io.on("connection", (socket) => {
     console.log("El usuario: ", data.user, "ha tirado ==>", data.roll);
     io.emit("userRoll", data); // Emitir evento a todos los sockets en la misma sala
   });
-
+  socket.on("bossDiceRoll", (data) => {
+    io.emit("bossRolled", data); // Emitir evento a todos los sockets en la misma sala
+  });
   socket.on("selectCharacter", (playerCharacter) => {
     if (players.length < 4) {
       players.push(playerCharacter);
