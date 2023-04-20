@@ -26,7 +26,7 @@ db.once("open", function () {
 // TEST SOCKETS
 const io = require("socket.io")(3002, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://proyecto-final-p58vomo46-marcmorado.vercel.app", "http://sanctumgames.online"],
     methods: ["GET", "POST"],
     credentials: true,
   },
