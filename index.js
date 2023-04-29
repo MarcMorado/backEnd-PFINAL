@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const Character = require("./db/schemas/Character");
 const jwt = require("jsonwebtoken");
 const app = express();
-const port = 3001;
+const port = process.env.PORT;
 const { saveWeapon, connectToDb } = require("./db/services/mongodb");
 //! PARA SUBIR EL SERVER https://railway.app/
 //TEST DB
